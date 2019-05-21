@@ -1,25 +1,61 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using RoomManagement.Control;
+using RoomManagement.Models;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using RoomManagement.Models;
 
 namespace RoomManagement.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : BaseController
     {
+        [AllowAnonymous]
         public IActionResult Index()
         {
             return View();
         }
 
-        public IActionResult Privacy()
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<JsonResult> Login(Login login)
         {
-            return View();
+            ResponseAPI<ResponseLogin> _response = API.Execute<ResponseLogin>("http://localhost:56011/api/login", null, null, login, RestSharp.Method.POST);
+
+            if (_response.Object.authenticated)
+            {
+                var _claims = new List<Claim>() {
+                            new Claim("Root", "root"),
+                            new Claim(ClaimTypes.Name, _response.Object.user.Name),
+                            new Claim("IdUser", _response.Object.user.IdUser.ToString()),
+                            new Claim(ClaimTypes.Email, _response.Object.user.Email),
+                            new Claim("AccessToken", _response.Object.accessToken)
+                        };
+
+                ClaimsIdentity claimsIdentity = new ClaimsIdentity(_claims, "login");
+                ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+                await _httpContextAcessor.HttpContext.SignInAsync(
+                        claimsPrincipal,
+                        new AuthenticationProperties()
+                        {
+                            IsPersistent = true
+                        });
+            }
+            return Json(_response.Object);
         }
 
+        [AllowAnonymous]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync();
+            return Redirect("/");
+        }
+
+        [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

@@ -5,14 +5,14 @@
 <div class="text-center">
     <h1 class="display-4">Bem vindo</h1>
     <div class="display-4 col-sm-12 col-md-12 col-md-offset-1">
-        <form id="form-login" action="~/login" method="post">
+        <form id="form-login" asp-controller="Home" asp-action="Login">
             <div class="form-group input-group">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
-                <input class="form-control" type="text" name="email" value="" placeholder="E-mail" />
+                <input class="form-control" type="text" name="email" id="email" value="" placeholder="E-mail" />
             </div>
             <div class="form-group input-group">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-                <input class="form-control" type="password" name='password' placeholder="Senha" />
+                <input class="form-control" type="password" id="password" name='password' placeholder="Senha" />
             </div>
             <div class="form-group">
                 <button type="submit" class="btn btn-def btn-block">Login</button>
@@ -20,3 +20,43 @@
         </form>
     </div>
 </div>
+
+@section Scripts{ 
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#form-login').submit(function () {
+            var email = $('#email').val();
+            var password = $('#password').val();
+            var error = "";
+            if (email == "") {
+                error += "E-mail inválido!\n";
+            }
+            if (password == "") {
+                error += "Senha inválida!\n";
+            }
+
+            if (error != "") {
+                swal(error);
+            }
+
+            $.ajax({
+                url: "/Home/Login",
+                method: "POST",
+                data: {
+                    email: email,
+                    password: password
+                },
+                success: function (response) {
+                    console.log(response);
+                },
+                error: function (response) {
+                    console.log(response);
+                }
+            });
+
+            return false;
+        });
+    });
+</script>
+}
